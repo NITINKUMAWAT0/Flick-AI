@@ -1,11 +1,18 @@
-import React from 'react'
+import { SidebarProvider } from "@/components/ui/sidebar";
+import AppSidebar from "./_components/AppSidebar";
+import AppHeader from './_components/AppHeader'
+import React from "react";
 
-const DashboardProvider = ({children}) => {
+const DashboardProvider = ({ children }) => {
   return (
-    <div>
-    {children}
-    </div>
-  )
-}
+    <SidebarProvider>
+      <AppSidebar />
+      <div className="w-full">
+        <AppHeader/>
+      {children}
+      </div>
+    </SidebarProvider>
+  );
+};
 
 export default DashboardProvider;
