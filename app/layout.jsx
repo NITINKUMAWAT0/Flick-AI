@@ -19,11 +19,9 @@ export default function RootLayout({ children }) {
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
     >
       <html lang="en" suppressHydrationWarning>
-        <body className={outfit.className}>
+        <body className={outfit.className}> 
           <Provider>{children}</Provider>
         </body>
       </html>
