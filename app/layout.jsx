@@ -2,6 +2,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import Provider from './provider';
+import UserSync from '@/app/_components/UserSync';
 
 export const metadata = {
   title: 'FlickAI - AI Video Generator',
@@ -19,10 +20,15 @@ export default function RootLayout({ children }) {
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
     >
       <html lang="en" suppressHydrationWarning>
-        <body className={outfit.className}> 
-          <Provider>{children}</Provider>
+        <body className={outfit.className}>
+          <Provider>
+            <UserSync /> {/* Now inside Provider */}
+            {children}
+          </Provider>
         </body>
       </html>
     </ClerkProvider>
