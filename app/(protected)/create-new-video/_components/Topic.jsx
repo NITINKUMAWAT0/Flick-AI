@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import React, { useState } from "react";
 
 const suggestions = [
@@ -20,14 +21,22 @@ const suggestions = [
   "Motivational Stories",
 ];
 
-const Topic = () => {
-  // Fixed: Initialize with null instead of undefined
+const Topic = ({ onHandleInputChange }) => {
   const [selectTopic, setSelectTopic] = useState(null);
+
+  const handleCustomTopicChange = (e) => {
+    const value = e.target.value;
+    onHandleInputChange('topic', value);
+  };
 
   return (
     <div>
       <h2 className="text-lg font-medium">Project Title</h2>
-      <Input placeholder="Enter project title" className="mt-4" />
+      <Input 
+        placeholder="Enter project title" 
+        className="mt-4" 
+        onChange={(e) => onHandleInputChange('title', e.target.value)}
+      />
       <div className="mt-6">
         <h2 className="text-lg font-medium">Video Topic</h2>
         <p className="text-sm text-gray-600 mb-3">
@@ -44,18 +53,27 @@ const Topic = () => {
               {suggestions.map((suggestion, index) => (
                 <Button
                   key={index}
-                  className={`mx-1.5 mt-2 bg-black text-white ${suggestion === selectTopic ? "bg-white text-black" : ""}`}
-                  onClick={() => setSelectTopic(suggestion)}
+                  className={`mx-1.5 mt-2 bg-black text-white ${
+                    suggestion === selectTopic ? "bg-white text-black" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectTopic(suggestion);
+                    onHandleInputChange('topic', suggestion);
+                  }}
                 >
                   {suggestion}
                 </Button>
               ))}
             </div>
           </TabsContent>
+
           <TabsContent value="your_topic">
             <div className="mt-4">
-              {/* Replace this with input form or custom topic UI */}
-              <p>You can enter your own topic here...</p>
+              <h2>Enter your own topic</h2>
+              <Textarea 
+                placeholder="Enter your topic" 
+                onChange={handleCustomTopicChange} 
+              />
             </div>
           </TabsContent>
         </Tabs>
