@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.19.2",
-    "@google/genai": "^0.13.0",
+    "@google/generative-ai": "^0.24.1",
     "@neondatabase/serverless": "^1.0.0",
     "@radix-ui/react-dialog": "^1.1.13",
     "@radix-ui/react-separator": "^1.1.6",

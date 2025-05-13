@@ -1,71 +1,74 @@
-import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Create a reusable function for script generation
-export async function generateScript(topic) {
-  try {
-    const ai = new GoogleGenAI({
-      apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-    });
-    
-    const config = {
-      temperature: 2,
-      responseMimeType: 'text/plain',
-    };
-    
-    const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    
-    const prompt = `write a three different script for 30 second to 60 second video on topic:${topic}, 
-give me response in JSON format and follow the scheama 
-{
-  scripts:[
-    {
-      content:""
-    },
-  ],
-}`;
-
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: config,
-    });
-
-    const response = result.response;
-    const text = response.text();
-    
-    // Try to extract JSON from the response
-    const jsonMatch = text.match(/```json([\s\S]*?)```/) || text.match(/^(\{[\s\S]*\})$/);
-    
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1].trim());
-    }
-    
-    // If no JSON formatting, try to parse directly
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error("Failed to parse JSON response:", e);
-      throw new Error("Invalid response format from Gemini API");
-    }
-  } catch (error) {
-    console.error("Error in generateScript:", error);
-    throw error;
-  }
-}
+export const runtime = 'edge';
 
 export async function POST(req) {
   try {
-    const { topic } = await req.json();
-    
-    if (!topic) {
-      return NextResponse.json({ error: "Topic is required" }, { status: 400 });
+    const body = await req.json();
+    const { topic } = body;
+
+    if (!topic || typeof topic !== 'string') {
+      return NextResponse.json(
+        { error: "Valid topic is required" },
+        { status: 400 }
+      );
     }
+
+
+    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "AIzaSyCGtYAfHNFZ22iJnW9geMEkk-1HGO3MFJk")
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `Generate three different YouTube short scripts (30-60 seconds) about: ${topic}.
+Respond with ONLY JSON following this exact schema:
+{
+  "scripts": [
+    {
+      "content": "Full script text here with engaging hook, main content, and call-to-action"
+    },
+    {
+      "content": "Alternative approach to the topic"
+    },
+    {
+      "content": "Creative take on the subject"
+    }
+  ]
+}
+
+Important:
+- Each script should be 50-100 words
+- Include natural pauses marked with (.)
+- No code blocks or markdown in response
+- Only return the JSON object`;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+
+    // Clean and parse the response
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.slice(7).trim();
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.slice(0, -3).trim();
+    }
+
+    const jsonResponse = JSON.parse(cleanText);
     
-    const scriptData = await generateScript(topic);
-    
-    return NextResponse.json(scriptData);
+    if (!jsonResponse.scripts || !Array.isArray(jsonResponse.scripts)) {
+      throw new Error("Invalid response structure from API");
+    }
+
+    return NextResponse.json(jsonResponse);
   } catch (error) {
     console.error("API route error:", error);
-    return NextResponse.json({ error: error.message || "Failed to generate scripts" }, { status: 500 });
+    return NextResponse.json(
+      { 
+        error: error.message || "Failed to generate scripts",
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
+      { status: 500 }
+    );
   }
 }

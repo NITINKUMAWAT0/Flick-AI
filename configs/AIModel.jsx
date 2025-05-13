@@ -1,64 +1,43 @@
-// To run this code you need to install the following dependencies:
-// npm install @google/genai mime
+// configs/AIModel.js
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-import {
-  GoogleGenAI,
-} from '@google/genai';
+// Create a singleton for the AI model
+let aiInstance = null;
 
-async function main() {
-  const ai = new GoogleGenAI({
-    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-  });
-  const config = {
-    temperature: 2,
-    responseMimeType: 'text/plain',
-  };
-  const model = 'gemini-2.0-flash';
-  const contents = [
-    {
-      role: 'user',
-      parts: [
-        {
-          text: `write a three different script for 30 second to 60 second video on topic: ${process.argv[2] || 'kids story'}, 
-give me response in JSON format and follow the scheama 
-{
-  scripts:[
-    {
-      content:""
-    },
-  ],
-}`,
-        },
-      ],
-    },
-  ];
-
-  try {
-    const response = await ai.models.generateContentStream({
-      model,
-      config,
-      contents,
-    });
-    
-    let fullText = '';
-    for await (const chunk of response) {
-      fullText += chunk.text;
-      console.log(chunk.text);  // Still log each chunk for debugging
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY ?? "AIzaSyCGtYAfHNFZ22iJnW9geMEkk-1HGO3MFJk";
+    if (!apiKey) {
+      throw new Error("Missing Gemini API key");
     }
-    
-    // Try to extract JSON from the response
-    const jsonMatch = fullText.match(/```json([\s\S]*?)```/) || 
-                     fullText.match(/^(\{[\s\S]*\})$/);
-                     
-    if (jsonMatch && jsonMatch[1]) {
-      // Return clean JSON
-      console.log(JSON.parse(jsonMatch[1].trim()));
-    } else {
-      console.log("Couldn't extract JSON from the response:", fullText);
-    }
-  } catch (error) {
-    console.error("Error generating content:", error);
+    aiInstance = new GoogleGenerativeAI({ apiKey });
   }
+  return aiInstance;
 }
 
-main();
+export const generateScript = {
+  sendMessage: async (prompt) => {
+    try {
+      const ai = getAI();
+      const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const result = await model.generateContent(prompt);
+      return {
+        response: {
+          text: () => {
+            const responseText = result.response.text();
+            // Try to clean up the response if it contains markdown code blocks
+            const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (jsonMatch && jsonMatch[1]) {
+              return jsonMatch[1].trim();
+            }
+            return responseText;
+          }
+        }
+      };
+    } catch (error) {
+      console.error("Error in AI model:", error);
+      throw error;
+    }
+  }
+};
