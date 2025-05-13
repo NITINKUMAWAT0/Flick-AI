@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { SparkleIcon } from "lucide-react";
+import { Poor_Story } from "next/font/google";
 import React, { useState } from "react";
 
 const suggestions = [
@@ -29,6 +31,10 @@ const Topic = ({ onHandleInputChange }) => {
     onHandleInputChange('topic', value);
   };
 
+  const GenerateScript = () => {
+
+  }
+
   return (
     <div>
       <h2 className="text-lg font-medium">Project Title</h2>
@@ -46,7 +52,7 @@ const Topic = ({ onHandleInputChange }) => {
           <TabsList className="bg-black border-none">
             <TabsTrigger value="suggestion">Suggestions</TabsTrigger>
             <TabsTrigger value="your_topic">Your Topic</TabsTrigger>
-          </TabsList>
+          </TabsList>e
 
           <TabsContent value="suggestion">
             <div className="mt-4">
@@ -78,8 +84,12 @@ const Topic = ({ onHandleInputChange }) => {
           </TabsContent>
         </Tabs>
       </div>
+      <Button className='text-sm mt-6' onClick={GenerateScript}>
+        <SparkleIcon/> Generate Script
+      </Button>
     </div>
   );
 };
 
 export default Topic;
+

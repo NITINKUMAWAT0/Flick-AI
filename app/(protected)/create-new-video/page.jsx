@@ -24,8 +24,10 @@ const CreateNewVideo = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div className="col-span-2 p-7 border rounded-xl">
+
           {/* topic and script */}
           <Topic onHandleInputChange={onHandleInputChange} />
+          
           {/* video image style */}
           
           {/* voice */}
