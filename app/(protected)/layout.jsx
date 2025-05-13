@@ -1,12 +1,13 @@
+// (protected)/layout.jsx
 import React from "react";
 import DashboardProvider from "./provider";
 
-const DashboardLayout = ({ children }) => {
+const ProtectedLayout = ({ children }) => {
   return (
-    <div>
-      <DashboardProvider>{children}</DashboardProvider>
-    </div>
+    <DashboardProvider>
+      {children}
+    </DashboardProvider>
   );
 };
 
-export default DashboardLayout;
+export default ProtectedLayout;
