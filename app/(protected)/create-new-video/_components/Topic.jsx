@@ -29,6 +29,8 @@ export const Topic = ({ onHandleInputChange }) => {
   const [error, setError] = useState("");
   const [scripts, setScripts] = useState([]);
   const [selectedScriptIndex, setSelectedScriptIndex] = useState(null);
+  const [customScript, setCustomScript] = useState("");
+  const [scriptTabValue, setScriptTabValue] = useState("generated");
 
   const handleCustomTopicChange = (e) => {
     const value = e.target.value;
@@ -36,10 +38,33 @@ export const Topic = ({ onHandleInputChange }) => {
     onHandleInputChange("topic", value);
   };
 
+  const handleCustomScriptChange = (e) => {
+    const value = e.target.value;
+    setCustomScript(value);
+    onHandleInputChange("selectedScript", { content: value, custom: true });
+  };
+
   const handleScriptSelection = (index) => {
     setSelectedScriptIndex(index);
+    setScriptTabValue("generated");
     // Pass the selected script to the parent component
     onHandleInputChange("selectedScript", scripts[index]);
+  };
+
+  const handleScriptTabChange = (value) => {
+    setScriptTabValue(value);
+    
+    // When switching to custom script tab, deselect any generated script
+    if (value === "custom") {
+      setSelectedScriptIndex(null);
+      // If there's already content in the custom script, pass it
+      if (customScript.trim()) {
+        onHandleInputChange("selectedScript", { content: customScript, custom: true });
+      }
+    } else if (value === "generated" && selectedScriptIndex !== null) {
+      // When switching back to generated, if there's a selection, pass it
+      onHandleInputChange("selectedScript", scripts[selectedScriptIndex]);
+    }
   };
 
   const generateScript = async () => {
@@ -54,6 +79,7 @@ export const Topic = ({ onHandleInputChange }) => {
     setError("");
     setScripts([]);
     setSelectedScriptIndex(null); // Reset selected script when generating new ones
+    setScriptTabValue("generated"); // Switch to generated tab when generating new scripts
     
     try {
       const response = await fetch("/api/generate-script", {
@@ -157,39 +183,56 @@ export const Topic = ({ onHandleInputChange }) => {
         </div>
       )}
       
-      {scripts.length > 0 && (
+      {(scripts.length > 0 || customScript) && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Generated Scripts</h3>
-          <p className="text-sm text-muted-foreground">
-            Click on a script to select it for your video
-          </p>
-          {scripts.map((script, index) => (
-            <div 
-              key={index} 
-              className={`p-4 rounded-lg cursor-pointer transition-all ${
-                selectedScriptIndex === index 
-                  ? "bg-primary text-primary-foreground border-2 border-white" 
-                  : "bg-muted hover:bg-muted/80"
-              }`}
-              onClick={() => handleScriptSelection(index)}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Script Option {index + 1}</h4>
-              </div>
-              <div className="whitespace-pre-wrap text-sm">
-                {script.content}
-              </div>
-            </div>
-          ))}
+          <h3 className="text-lg font-medium">Script Selection</h3>
           
-          {/* {selectedScriptIndex !== null && (
-            <Button 
-              className="w-full"
-              onClick={() => onHandleInputChange("confirmScript", scripts[selectedScriptIndex])}
-            >
-              Continue with Selected Script
-            </Button>
-          )} */}
+          <Tabs value={scriptTabValue} onValueChange={handleScriptTabChange} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="generated">Generated Scripts</TabsTrigger>
+              <TabsTrigger value="custom">Write Your Own</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="generated">
+              <div className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Click on a script to select it for your video
+                </p>
+                {scripts.map((script, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-4 rounded-lg cursor-pointer transition-all ${
+                      selectedScriptIndex === index 
+                        ? "bg-primary text-primary-foreground border-2 border-white" 
+                        : "bg-muted hover:bg-muted/80"
+                    }`}
+                    onClick={() => handleScriptSelection(index)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Script Option {index + 1}</h4>
+                    </div>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {script.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="custom">
+              <div className="mt-4 space-y-2">
+                <Textarea
+                  placeholder="Write your own script here"
+                  value={customScript}
+                  onChange={handleCustomScriptChange}
+                  className="min-h-[200px]"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Create your own script for your video
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       )}
     </div>
