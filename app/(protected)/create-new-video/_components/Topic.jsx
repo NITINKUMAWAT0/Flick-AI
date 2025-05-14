@@ -28,11 +28,18 @@ export const Topic = ({ onHandleInputChange }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [scripts, setScripts] = useState([]);
+  const [selectedScriptIndex, setSelectedScriptIndex] = useState(null);
 
   const handleCustomTopicChange = (e) => {
     const value = e.target.value;
     setCustomTopic(value);
     onHandleInputChange("topic", value);
+  };
+
+  const handleScriptSelection = (index) => {
+    setSelectedScriptIndex(index);
+    // Pass the selected script to the parent component
+    onHandleInputChange("selectedScript", scripts[index]);
   };
 
   const generateScript = async () => {
@@ -46,6 +53,7 @@ export const Topic = ({ onHandleInputChange }) => {
     setIsLoading(true);
     setError("");
     setScripts([]);
+    setSelectedScriptIndex(null); // Reset selected script when generating new ones
     
     try {
       const response = await fetch("/api/generate-script", {
@@ -152,8 +160,19 @@ export const Topic = ({ onHandleInputChange }) => {
       {scripts.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Generated Scripts</h3>
+          <p className="text-sm text-muted-foreground">
+            Click on a script to select it for your video
+          </p>
           {scripts.map((script, index) => (
-            <div key={index} className="p-4 bg-muted rounded-lg">
+            <div 
+              key={index} 
+              className={`p-4 rounded-lg cursor-pointer transition-all ${
+                selectedScriptIndex === index 
+                  ? "bg-primary text-primary-foreground border-2 border-white" 
+                  : "bg-muted hover:bg-muted/80"
+              }`}
+              onClick={() => handleScriptSelection(index)}
+            >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-medium">Script Option {index + 1}</h4>
               </div>
@@ -162,6 +181,15 @@ export const Topic = ({ onHandleInputChange }) => {
               </div>
             </div>
           ))}
+          
+          {/* {selectedScriptIndex !== null && (
+            <Button 
+              className="w-full"
+              onClick={() => onHandleInputChange("confirmScript", scripts[selectedScriptIndex])}
+            >
+              Continue with Selected Script
+            </Button>
+          )} */}
         </div>
       )}
     </div>
