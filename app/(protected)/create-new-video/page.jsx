@@ -41,7 +41,7 @@ const CreateNewVideo = () => {
         </div>
 
         <div>
-          <Preview/>
+          <Preview formData={formData}/>
         </div>
       </div>
     </div>

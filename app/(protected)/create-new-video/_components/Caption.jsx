@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 
-const options = [
+export const options = [
   {
     name: 'Youtuber',
     value: 'youtuber',

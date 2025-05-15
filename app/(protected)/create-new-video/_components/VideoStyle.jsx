@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 
-const options = [
+export const options = [
   {
     name: 'Realistic',
     image: '/realistic.jpeg'
