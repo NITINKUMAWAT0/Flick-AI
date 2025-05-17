@@ -14,17 +14,12 @@ const CreateNewVideo = () => {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const onHandleInputChange = (fieldName, fieldValue) => {
     setFormData(prev => ({
       ...prev,
       [fieldName]: fieldValue
     }));
-    
-    // Clear status messages when form data changes
-    setError("");
-    setSuccess(false);
   };
 
   useEffect(() => {
@@ -32,9 +27,7 @@ const CreateNewVideo = () => {
   }, [formData]);
 
   const GenerateVideo = async () => {
-    // Reset status
-    setError("");
-    setSuccess(false);
+
     
     // Updated validation to match the actual form data structure
     if (!formData?.topic || 
@@ -55,12 +48,7 @@ const CreateNewVideo = () => {
       });
       
       console.log("API Response:", result);
-      
-      if (result.data.success) {
-        setSuccess(true);
-      } else {
-        setError("Failed to process video request");
-      }
+
     } catch (err) {
       console.error("Failed to generate video:", err);
       setError(err.response?.data?.error || "Failed to generate video. Please try again.");
@@ -79,16 +67,6 @@ const CreateNewVideo = () => {
           <VideoStyle onHandleInputChange={onHandleInputChange} />
           <Voice onHandleInputChange={onHandleInputChange} />
           <Caption onHandleInputChange={onHandleInputChange} />
-          
-          {error && (
-            <div className="text-red-500 mt-2 p-2 bg-red-50 rounded-md">{error}</div>
-          )}
-          
-          {success && (
-            <div className="text-green-500 mt-2 p-2 bg-green-50 rounded-md">
-              Video generation process started successfully!
-            </div>
-          )}
           
           <Button 
             className="mt-6" 
