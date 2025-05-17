@@ -9,17 +9,23 @@ import Preview from "./_components/Preview";
 import { Button } from "@/components/ui/button";
 import { WandSparkles } from "lucide-react";
 import axios from "axios";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 
 const CreateNewVideo = () => {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const CreateInitialVideoRecord = useMutation(api.videoData.CreateVideoData);
+  const { user } = useUser();
 
   const onHandleInputChange = (fieldName, fieldValue) => {
     setFormData(prev => ({
       ...prev,
       [fieldName]: fieldValue
     }));
+    setError(""); // Clear error when form data changes
   };
 
   useEffect(() => {
@@ -27,8 +33,6 @@ const CreateNewVideo = () => {
   }, [formData]);
 
   const GenerateVideo = async () => {
-
-    
     // Updated validation to match the actual form data structure
     if (!formData?.topic || 
         !formData?.selectedScript?.content || 
@@ -39,16 +43,37 @@ const CreateNewVideo = () => {
       console.log("ERROR:", "Enter All Fields");
       return;
     }
+
+    if (!user) {
+      setError("User authentication required");
+      return;
+    }
     
     try {
       setLoading(true);
       
+      // Save the video data to db
+      const videoRecord = await CreateInitialVideoRecord({
+        title: formData.title || formData.topic, // Fallback to topic if title is not set
+        topic: formData.topic,
+        script: formData.selectedScript?.content,
+        videoStyle: formData.style,
+        caption: formData.caption,
+        voice: formData.voice,
+        uid: user.id,
+        createdBy: user.primaryEmailAddress?.emailAddress || "unknown"
+      });
+      
+      console.log("Created video record:", videoRecord);
+      
+      // Generate the video through the API
       const result = await axios.post('/api/generate-video-data', {
-        ...formData
+        ...formData,
+        videoId: videoRecord // Pass the database ID for reference
       });
       
       console.log("API Response:", result);
-
+      
     } catch (err) {
       console.error("Failed to generate video:", err);
       setError(err.response?.data?.error || "Failed to generate video. Please try again.");
@@ -67,6 +92,10 @@ const CreateNewVideo = () => {
           <VideoStyle onHandleInputChange={onHandleInputChange} />
           <Voice onHandleInputChange={onHandleInputChange} />
           <Caption onHandleInputChange={onHandleInputChange} />
+          
+          {error && (
+            <div className="text-red-500 mt-2 p-2 bg-red-50 rounded-md">{error}</div>
+          )}
           
           <Button 
             className="mt-6" 

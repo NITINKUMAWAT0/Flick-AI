@@ -8,10 +8,10 @@ export const GenerateVideoData = inngest.createFunction(
   { event: "generate-video-data" },
   async ({ event, step }) => {
     const { selectedScript, topic, title, caption, style, voice } = event?.data;
-    
+
     // Extract script content from selectedScript
     const script = selectedScript?.content;
-    
+
     if (!script) {
       throw new Error("Script content not found");
     }
@@ -31,13 +31,26 @@ export const GenerateVideoData = inngest.createFunction(
           },
         }
       );
-      
+
       console.log(result.data.audio);
       return result.data.audio;
     });
 
     // Generate Captions
-    // TODO: Implement caption generation
+    const GenerateCaption = await step.run("generateCaption", async () => {
+      const deepgram = createClient(process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY);
+
+      const { result, error } = await deepgram.listen.prerecorded.transcribeUrl(
+        {
+          url: generateAudioFile,
+        },
+        // STEP 3: Configure Deepgram options for audio analysis
+        {
+          model: "nova-3",
+          smart_format: true,
+        }
+      );
+    });
 
     // Generate Image Prompt from Script
     // TODO: Implement image prompt generation
