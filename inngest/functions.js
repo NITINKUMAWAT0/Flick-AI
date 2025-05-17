@@ -1,6 +1,16 @@
-import { inngest } from "./client"; 
+// Function file with inngest
+import { inngest } from "./client";
 import axios from "axios";
 import { createClient } from "@deepgram/sdk";
+import GenerateImageScript from '@/configs/AIModel';
+
+const ImagePromptScript = `Generate Image prompt of {style} style with all details for each scene for 30 seconds video - Just Give specifying image prompt depends on the story line - do not give camera angle image prompt - Follow the Following schema and return JSON data (Max 4-5 Images) 
+[
+  {
+    imagePrompt: '',
+    sceneContent: '{script}'
+  }
+]`;
 
 const BASE_URL = "https://aigurulab.tech";
 
@@ -17,8 +27,8 @@ export const GenerateVideoData = inngest.createFunction(
       throw new Error("Script content not found");
     }
     
-    // Generate Audio File MP3
-  const generateAudioFile = await step.run("GenerateAudioFile", async () => {
+    //1.  Generate Audio File MP3....
+    const generateAudioFile = await step.run("GenerateAudioFile", async () => {
       const result = await axios.post(
         BASE_URL + "/api/text-to-speech",
         {
@@ -32,12 +42,12 @@ export const GenerateVideoData = inngest.createFunction(
           },
         }
       );
-
+      
       console.log(result.data.audio);
       return result.data.audio;
     });
-
-    // Generate Captions with improved error handling and timeout
+    
+    //2.   Generate Captions.....
     const GenerateCaption = await step.run("generateCaption", async () => {
       try {
         // Make sure we're using the correct environment variable
@@ -56,13 +66,13 @@ export const GenerateVideoData = inngest.createFunction(
         const { result, error } = await Promise.race([
           deepgram.listen.prerecorded.transcribeUrl(
             { url: generateAudioFile },
-            { 
-              model: "nova-3",
-              smart_format: true 
-            }
+            {
+               model: "nova-3",
+              smart_format: true
+             }
           ),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Deepgram transcription timed out after 30 seconds")), 30000)
+             setTimeout(() => reject(new Error("Deepgram transcription timed out after 30 seconds")), 30000)
           )
         ]);
         
@@ -73,7 +83,7 @@ export const GenerateVideoData = inngest.createFunction(
         
         console.log("Transcription completed successfully");
         return result?.channels[0]?.alternatives[0]?.words;
-
+       
       } catch (err) {
         console.error("Caption generation failed:", err.message);
         // Provide a fallback response instead of failing completely
@@ -95,18 +105,33 @@ export const GenerateVideoData = inngest.createFunction(
       }
     });
     
-    console.log("Caption generation result:", JSON.stringify(GenerateCaption, null, 2));
+    //3. Generate Image Prompt from Script....
+    const GenerateImagePrompts = await step.run(
+      "generateImagePrompt", async() => {
+        // Create the final prompt by replacing placeholders
+        const FINAL_PROMPT = ImagePromptScript
+          .replace('{style}', style)
+          .replace('{script}', script);
+        
+        // Send the prompt to the GenerateImageScript service
+        const result = await GenerateImageScript.sendMessage({
+          prompt: FINAL_PROMPT
+        });
+        
+        // Parse the response
+        try {
+          const responseText = result.response.text();
+          return JSON.parse(responseText);
+        } catch (error) {
+          console.error("Error parsing image prompt response:", error);
+          throw error;
+        }
+      }
+    );
     
-    // TODO: Generate Image Prompt from Script
     // TODO: Implement AI image generation
     // TODO: Implement database storage
     
-    return { 
-      audioUrl: generateAudioFile,
-      captions: GenerateCaption,
-      // script: script,
-      // title: title,
-      // topic: topic
-    };
+    return GenerateImagePrompts;
   }
 );
