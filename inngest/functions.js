@@ -1,8 +1,10 @@
-// Function file with inngest
+// Complete updated function file with inngest
 import { inngest } from "./client";
 import axios from "axios";
 import { createClient } from "@deepgram/sdk";
 import GenerateImageScript from "@/configs/AIModel";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../convex/_generated/api";
 
 const ImagePromptScript = `Generate Image prompt of {style} style with all details for each scene for 30 seconds video - Just Give specifying image prompt depends on the story line - do not give camera angle image prompt - Follow the Following schema and return JSON data (Max 4-5 Images) 
 [
@@ -18,7 +20,8 @@ export const GenerateVideoData = inngest.createFunction(
   { id: "generate-video-data" },
   { event: "generate-video-data" },
   async ({ event, step }) => {
-    const { selectedScript, topic, title, caption, style, voice } = event?.data;
+    const { selectedScript, topic, title, caption, style, voice, videoRecord } = event?.data;
+    const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
     // Extract script content from selectedScript
     const script = selectedScript?.content;
@@ -140,7 +143,7 @@ export const GenerateVideoData = inngest.createFunction(
       }
     );
 
-    //4. Generate Images Using AI...
+    //4. Generate Images Using AI....
     const GenerateImages = await step.run("generateImages", async () => {
       let images = [];
       images = await Promise.all(
@@ -168,8 +171,19 @@ export const GenerateVideoData = inngest.createFunction(
       return images;
     });
 
-    //Implement database storage
+    //5. Implement database storage....
+    const UpdateDB = await step.run(
+      'Update', async () => {
+        const result = await convex.mutation(api.videoData.UpdateVideoRecord, {
+          videoRecord: videoRecord,
+          audioUrl: generateAudioFile, // Use the actual audio URL we generated
+          captionJson: JSON.stringify(GenerateCaption), // Convert to string as expected by the mutation
+          images: JSON.stringify(GenerateImages), // Convert array to string as expected by the mutation
+        });
+        return result;
+      }
+    );
 
-    return GenerateImages;
+    return UpdateDB;
   }
 );

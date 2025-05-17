@@ -69,7 +69,7 @@ const CreateNewVideo = () => {
       // Generate the video through the API
       const result = await axios.post('/api/generate-video-data', {
         ...formData,
-        videoId: videoRecord // Pass the database ID for reference
+        videoId: videoRecord
       });
       
       console.log("API Response:", result);
