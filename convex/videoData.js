@@ -28,12 +28,12 @@ export const CreateVideoData = mutation({
 });
 
 export const UpdateVideoRecord = mutation({
-  args: {
-    videoRecord: v.id("videoData"),
-    audioUrl: v.string(),
-    images: v.string(), // This expects a JSON string now
-    captionJson: v.string(), // This expects a JSON string now
-  },
+ args: {
+  videoRecord: v.id("videoData"),  // ✅ REQUIRED
+  audioUrl: v.string(),
+  images: v.string(),
+  captionJson: v.string(),
+},
   handler: async (ctx, args) => {
     const result = await ctx.db.patch(args.videoRecord, {
       audioUrl: args.audioUrl,

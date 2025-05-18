@@ -20,7 +20,7 @@ export const GenerateVideoData = inngest.createFunction(
   { id: "generate-video-data" },
   { event: "generate-video-data" },
   async ({ event, step }) => {
-    const { selectedScript, topic, title, caption, style, voice, videoRecord } = event?.data;
+    const { selectedScript, topic, title, caption, style, voice, videoId } = event?.data;
     const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
     // Extract script content from selectedScript
@@ -51,71 +51,57 @@ export const GenerateVideoData = inngest.createFunction(
     });
 
     //2. Generate Captions.....
-    const GenerateCaption = await step.run("generateCaption", async () => {
-      try {
-        // Make sure we're using the correct environment variable
-        const apiKey =
-          process.env.DEEPGRAM_API_KEY ||
-          process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
+ const GenerateCaption = await step.run("generateCaption", async () => {
+  try {
+    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
-        if (!apiKey) {
-          throw new Error(
-            "Deepgram API key not found in environment variables"
-          );
-        }
-
-        console.log("Initializing Deepgram client");
-        const deepgram = createClient(apiKey);
-
-        console.log("Starting transcription for URL:", generateAudioFile);
-
-        // Add timeout to the request to prevent hanging
-        const { result, error } = await Promise.race([
-          deepgram.listen.prerecorded.transcribeUrl(
-            { url: generateAudioFile },
-            {
-              model: "nova-3",
-              smart_format: true,
-            }
-          ),
-          new Promise((_, reject) =>
-            setTimeout(
-              () =>
-                reject(
-                  new Error("Deepgram transcription timed out after 30 seconds")
-                ),
-              30000
-            )
-          ),
-        ]);
-
-        if (error) {
-          console.error("Deepgram transcription error:", error);
-          throw error;
-        }
-
-        console.log("Transcription completed successfully");
-        return result?.channels[0]?.alternatives[0]?.words;
-      } catch (err) {
-        console.error("Caption generation failed:", err.message);
-        // Provide a fallback response instead of failing completely
-        return {
-          error: err.message,
-          fallback: true,
-          results: {
-            channels: [
-              {
-                alternatives: [
-                  {
-                    transcript: script.split("(.)").join(" "),
-                  },
-                ],
-              },
-            ],
-          },
-        };
+    // Make the Deepgram API request with words enabled
+    const { result, error } = await deepgram.listen.prerecorded.transcribeUrl(
+      { url: generateAudioFile },
+      {
+        model: "nova-3",
+        smart_format: true,
+        words: true, // This ensures word-level timings are returned
+        punctuate: true,
+        paragraphs: true
       }
-    });
+    );
+
+    if (error) {
+      console.error("Deepgram API error:", error);
+      throw error;
+    }
+
+    // Safely extract words with proper null checks
+    const words = result?.results?.channels[0]?.alternatives[0]?.words;
+    const transcript = result?.results?.channels[0]?.alternatives[0]?.transcript;
+
+    if (!words || !transcript) {
+      console.warn("Deepgram response missing words or transcript");
+      return {
+        error: "Missing words or transcript in response",
+        fallback: true,
+        transcript: script.split("(.)").join(" "),
+        words: [] // Return empty array for consistent structure
+      };
+    }
+
+    return {
+      transcript,
+      words,
+      timingConfidence: words.reduce((acc, word) => acc + word.confidence, 0) / words.length
+    };
+
+  } catch (err) {
+    console.error("Caption generation failed:", err);
+    return {
+      error: err.message,
+      fallback: true,
+      transcript: script.split("(.)").join(" "),
+      words: [] // Return empty array for consistent structure
+    };
+  }
+});
 
     //3. Generate Image Prompt from Script....
     const GenerateImagePrompts = await step.run(
@@ -175,7 +161,7 @@ export const GenerateVideoData = inngest.createFunction(
     const UpdateDB = await step.run(
       'Update', async () => {
         const result = await convex.mutation(api.videoData.UpdateVideoRecord, {
-          videoRecord: videoRecord,
+          videoRecord: videoId,
           audioUrl: generateAudioFile, // Use the actual audio URL we generated
           captionJson: JSON.stringify(GenerateCaption), // Convert to string as expected by the mutation
           images: JSON.stringify(GenerateImages), // Convert array to string as expected by the mutation
