@@ -170,6 +170,6 @@ export const GenerateVideoData = inngest.createFunction(
       }
     );
 
-    return UpdateDB;
+    return 'Executed successfully!';
   }
 );
