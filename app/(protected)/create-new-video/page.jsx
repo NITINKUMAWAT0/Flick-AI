@@ -146,7 +146,7 @@ const CreateNewVideo = () => {
             {loading ? (
               <>
                 <span className="animate-spin mr-2">⟳</span>
-                Starting generation... Redirecting to dashboard
+                Starting generation...
               </>
             ) : userData && userData.credits <= 0 ? (
               <>
@@ -168,15 +168,6 @@ const CreateNewVideo = () => {
                 <a href="/pricing" className="text-blue-600 hover:underline ml-1">
                   Purchase more credits here →
                 </a>
-              </p>
-            </div>
-          )}
-          
-          {/* Loading indicator during generation */}
-          {loading && (
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
-                🎬 Starting video generation... You'll be redirected to your dashboard where you can monitor the progress.
               </p>
             </div>
           )}
