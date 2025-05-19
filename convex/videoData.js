@@ -1,5 +1,5 @@
 // videoData.js - Fixed version
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const CreateVideoData = mutation({
@@ -68,3 +68,17 @@ export const UpdateVideoRecord = mutation({
     return result;
   },
 });
+
+export const GetUserVideos = query({
+  args:{
+    uid:v.id('users')
+  },
+  handler:async(ctx, args)=>{
+    const result = await ctx.db.query("videoData")
+    .filter(q=>q.eq(q.field("uid"),args.uid))
+    .order('desc')
+    .collect();
+
+    return result;
+  }
+})
