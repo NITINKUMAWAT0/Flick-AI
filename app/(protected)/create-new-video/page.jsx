@@ -12,6 +12,7 @@ import axios from "axios";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 const CreateNewVideo = () => {
   const [formData, setFormData] = useState({});
@@ -19,6 +20,7 @@ const CreateNewVideo = () => {
   const [loading, setLoading] = useState(false);
   const CreateInitialVideoRecord = useMutation(api.videoData.CreateVideoData);
   const { user } = useUser();
+  const router = useRouter();
   
   // Fixed query call - using clerkUserId parameter to match the query definition
   const userData = useQuery(api.users.getUserByClerkId, 
@@ -88,20 +90,23 @@ const CreateNewVideo = () => {
             
       console.log("Created video record:", videoRecord);
             
-      // Generate the video through the API
+      // Generate the video through the API (starts background processing)
       const result = await axios.post('/api/generate-video-data', {
         ...formData,
         videoId: videoRecord,
       });
             
       console.log("API Response:", result);
+      
+      // Redirect to dashboard after successfully starting video generation
+      router.push('/dashboard');
           
     } catch (err) {
       console.error("Failed to generate video:", err);
       setError(err.response?.data?.error || err.message || "Failed to generate video. Please try again.");
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only set loading to false on error since we redirect on success
     }
+    // Note: We don't set loading to false on success because we're redirecting
   };
 
   return (
@@ -132,7 +137,7 @@ const CreateNewVideo = () => {
           {error && (
             <div className="text-red-500 mt-2 p-2 bg-red-50 rounded-md">{error}</div>
           )}
-                    
+                   
           <Button
             className="mt-6"
             onClick={GenerateVideo}
@@ -141,7 +146,7 @@ const CreateNewVideo = () => {
             {loading ? (
               <>
                 <span className="animate-spin mr-2">⟳</span>
-                Processing...
+                Starting generation... Redirecting to dashboard
               </>
             ) : userData && userData.credits <= 0 ? (
               <>
@@ -163,6 +168,15 @@ const CreateNewVideo = () => {
                 <a href="/pricing" className="text-blue-600 hover:underline ml-1">
                   Purchase more credits here →
                 </a>
+              </p>
+            </div>
+          )}
+          
+          {/* Loading indicator during generation */}
+          {loading && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800">
+                🎬 Starting video generation... You'll be redirected to your dashboard where you can monitor the progress.
               </p>
             </div>
           )}
