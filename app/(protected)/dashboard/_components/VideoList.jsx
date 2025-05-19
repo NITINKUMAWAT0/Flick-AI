@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -38,10 +39,8 @@ function VideoList() {
         uid: user._id,
       });
 
-      console.log("Fetched videos:", result);
       setVideoList(result || []);
 
-      // Check for pending videos after setting the video list
       const pendingVideo = result?.find((item) => item.status === "pending");
       if (pendingVideo) {
         GetPendingVideoStatus(pendingVideo);
@@ -57,24 +56,20 @@ function VideoList() {
   const GetPendingVideoStatus = async (pendingVideo) => {
     const intervalId = setInterval(async () => {
       try {
-        // Get video data by Id
         const result = await convex.query(api.videoData.GetVideoById, {
           videoId: pendingVideo._id,
         });
 
         if (result?.status === "completed") {
           clearInterval(intervalId);
-          console.log("Video processing completed");
           GetUserVideoList();
         }
       } catch (error) {
         console.error("Error checking video status:", error);
-        // Clear interval on error to prevent infinite polling
         clearInterval(intervalId);
       }
     }, 5000);
 
-    // Clean up interval after 10 minutes to prevent endless polling
     setTimeout(() => {
       clearInterval(intervalId);
     }, 600000);
@@ -117,11 +112,8 @@ function VideoList() {
             }
 
             return (
-              <Link href={"/play-video/"+video?._id}>
-                <div
-                  key={video._id || index}
-                  className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow hover:cursor-pointer"
-                >
+              <Link href={`/play-video/${video?._id}`} key={video._id || index}>
+                <div className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow hover:cursor-pointer">
                   <div className="relative aspect-[3/4] bg-gray-900">
                     {video?.status === "completed" ? (
                       <Image
@@ -130,7 +122,7 @@ function VideoList() {
                         fill
                         className="object-cover"
                         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        priority={index < 4} // Prioritize first 4 images
+                        priority={index < 4}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-900">
