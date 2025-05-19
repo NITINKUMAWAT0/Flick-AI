@@ -7,9 +7,11 @@ import { useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@clerk/nextjs";
 import moment from "moment";
+import { RefreshCcw } from "lucide-react";
 
 function VideoList() {
   const [videoList, setVideoList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const convex = useConvex();
   const { userId } = useAuth();
 
@@ -21,12 +23,14 @@ function VideoList() {
 
   const GetUserVideoList = async () => {
     try {
+      setIsLoading(true);
       const user = await convex.query(api.users.getUserByClerkId, {
         clerkUserId: userId,
       });
 
       if (!user) {
         setVideoList([]);
+        setIsLoading(false);
         return;
       }
 
@@ -36,14 +40,57 @@ function VideoList() {
 
       console.log("Fetched videos:", result);
       setVideoList(result || []);
+      
+      // Check for pending videos after setting the video list
+      const pendingVideo = result?.find((item) => item.status === 'pending');
+      if (pendingVideo) {
+        GetPendingVideoStatus(pendingVideo);
+      }
     } catch (error) {
       console.error("Error fetching videos:", error);
       setVideoList([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const GetPendingVideoStatus = async (pendingVideo) => {
+    const intervalId = setInterval(async () => {
+      try {
+        // Get video data by Id
+        const result = await convex.query(api.videoData.GetVideoById, {
+          videoId: pendingVideo._id
+        });
+
+        if (result?.status === 'completed') {
+          clearInterval(intervalId);
+          console.log('Video processing completed');
+          GetUserVideoList();
+        }
+      } catch (error) {
+        console.error("Error checking video status:", error);
+        // Clear interval on error to prevent infinite polling
+        clearInterval(intervalId);
+      }
+    }, 5000);
+
+    // Clean up interval after 10 minutes to prevent endless polling
+    setTimeout(() => {
+      clearInterval(intervalId);
+    }, 600000);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[200px] flex items-center justify-center">
+        <RefreshCcw className="animate-spin mr-2" />
+        <span>Loading videos...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-[200px">
+    <div className="min-h-[200px]">
       {videoList.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-12">
           <Image src="/logo.svg" alt="logo" width={60} height={60} />
@@ -59,9 +106,11 @@ function VideoList() {
           {videoList.map((video, index) => {
             let imageUrl = "/placeholder-video.png";
             try {
-              const parsedImages = JSON.parse(video.images);
-              if (Array.isArray(parsedImages) && parsedImages.length > 0) {
-                imageUrl = parsedImages[0];
+              if (video.images) {
+                const parsedImages = JSON.parse(video.images);
+                if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+                  imageUrl = parsedImages[0];
+                }
               }
             } catch (err) {
               console.warn("Invalid images JSON:", video.images);
@@ -69,22 +118,44 @@ function VideoList() {
 
             return (
               <div
-                key={index}
+                key={video._id || index}
                 className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow hover:cursor-pointer"
               >
                 <div className="relative aspect-[3/4] bg-gray-900">
-                  <Image
-                    src={imageUrl}
-                    alt="Video thumbnail"
-                    fill
-                    className="object-cover absolute inset-0"
-                  />
+                  {video?.status === 'completed' ? (
+                    <Image
+                      src={imageUrl}
+                      alt="Video thumbnail"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      priority={index < 4} // Prioritize first 4 images
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                      <div className="flex flex-col items-center">
+                        <RefreshCcw className="animate-spin mb-2" size={24} />
+                        <h2 className="text-white text-sm">Generating...</h2>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3">
-                  <h2 className="text-white text-base font-semibold truncate">{video?.title}</h2>
+                  <h2 className="text-white text-base font-semibold truncate">
+                    {video?.title || 'Untitled Video'}
+                  </h2>
                   <p className="text-sm text-gray-400 mt-1">
-                    {moment(video?._creationTime).fromNow()}
+                    {video?._creationTime ? moment(video._creationTime).fromNow() : 'Recently created'}
                   </p>
+                  <div className="flex items-center mt-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      video?.status === 'completed' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {video?.status || 'pending'}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
