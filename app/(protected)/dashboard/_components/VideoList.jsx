@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@clerk/nextjs";
+import moment from "moment";
 
 function VideoList() {
   const [videoList, setVideoList] = useState([]);
@@ -42,14 +43,14 @@ function VideoList() {
   };
 
   return (
-    <div className="min-h-[200px]">
-      {videoList?.length === 0 ? (
+    <div className="min-h-[200px">
+      {videoList.length === 0 ? (
         <div className="flex flex-col items-center justify-center mt-12">
-          <Image src={"/logo.svg"} alt="logo" width={60} height={60} />
+          <Image src="/logo.svg" alt="logo" width={60} height={60} />
           <h2 className="text-gray-400 text-lg mt-5">
             You don't have any videos created. Create a new one.
           </h2>
-          <Link href={"/create-new-video"}>
+          <Link href="/create-new-video">
             <Button className="mt-5">Create New Video</Button>
           </Link>
         </div>
@@ -69,16 +70,21 @@ function VideoList() {
             return (
               <div
                 key={index}
-                className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow hover:cursor-pointer"
               >
-                <div className="relative aspect-video bg-gray-100">
+                <div className="relative aspect-[3/4] bg-gray-900">
                   <Image
                     src={imageUrl}
                     alt="Video thumbnail"
-                    width={600}
-                    height={600}
-                    className="object-cover"
+                    fill
+                    className="object-cover absolute inset-0"
                   />
+                </div>
+                <div className="p-3">
+                  <h2 className="text-white text-base font-semibold truncate">{video?.title}</h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {moment(video?._creationTime).fromNow()}
+                  </p>
                 </div>
               </div>
             );
