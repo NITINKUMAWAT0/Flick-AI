@@ -20,7 +20,7 @@ export const GenerateVideoData = inngest.createFunction(
   { id: "generate-video-data" },
   { event: "generate-video-data" },
   async ({ event, step }) => {
-    const { selectedScript, topic, title, caption, style, voice, videoId } = event?.data;
+    const { selectedScript, topic, title, caption, style, voice, videoId} = event?.data;
     const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL);
 
     // Extract script content from selectedScript
