@@ -1,39 +1,36 @@
-import Image from 'next/image'
-import React from 'react'
-import { options as videoOptions } from './VideoStyle'
-import { options as captionOptions } from './Caption'
+import Image from 'next/image';
+import React from 'react';
+import { options as videoOptions } from './VideoStyle';
 
 const Preview = ({ formData }) => {
   // Find selected video style
-  const selectedVideoStyle = formData?.style 
+  const selectedVideoStyle = formData?.style
     ? videoOptions.find(option => option.name === formData.style)
-    : null
+    : null;
 
-  // Find selected caption style
-  const selectedCaption = formData?.caption
-    ? captionOptions.find(option => option.value === formData.caption)
-    : null
+  const captionData = formData?.caption;
+  const selectedCaptionText = captionData?.value;
+  const selectedCaptionStyle = captionData?.style;
 
   return (
     <div className="border rounded-lg p-4 h-fit sticky top-4">
       <h3 className="text-xl font-bold mb-4">Video Preview</h3>
-      
+
       {selectedVideoStyle ? (
         <div className="relative w-full aspect-video mb-4">
-          {/* Video Style Image */}
-          <Image 
-            src={selectedVideoStyle.image} 
+
+          <Image
+            src={selectedVideoStyle.image}
             alt={selectedVideoStyle.name}
             width={500}
             height={900}
             className="w-full h-[70vh] object-cover rounded-xl"
           />
-          
-          {/* Caption Overlay */}
-          {selectedCaption && (
+
+          {captionData && (
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent rounded-b-xl">
-              <div className={`${selectedCaption.style} text-center`}>
-                {selectedCaption.name}
+              <div className={`${selectedCaptionStyle} text-center`}>
+                {selectedCaptionText}
               </div>
             </div>
           )}
@@ -44,7 +41,7 @@ const Preview = ({ formData }) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Preview
+export default Preview;

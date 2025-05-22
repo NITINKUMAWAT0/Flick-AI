@@ -19,7 +19,7 @@ export default defineSchema({
     videoStyle: v.string(),
     caption: v.any(),
     voice: v.string(),
-    images:v.optional(v.string()),
+    images:v.optional(v.any()),
     audioUrl:v.optional(v.string()),
     captionJson:v.optional(v.any()),
     uid:v.string('users'),

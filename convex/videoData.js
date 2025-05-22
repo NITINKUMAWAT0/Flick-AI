@@ -7,28 +7,17 @@ export const CreateVideoData = mutation({
     topic: v.string(),
     script: v.string(),
     videoStyle: v.string(),
-    caption: v.string(),
+    caption: v.object({ value: v.string(), style: v.string() }),
     voice: v.string(),
     uid: v.id("users"),
     createdBy: v.string(),
-    credits: v.number()
+    credits: v.number(),
   },
   handler: async (ctx, args) => {
-    // First, verify the user exists and has enough credits
     const user = await ctx.db.get(args.uid);
-    if (!user) {
-      throw new Error("User not found");
-    }
-        
-    if (user.credits <= 0) {
-      throw new Error("You have 0 credits left! Please purchase more credits to continue generating videos.");
-    }
-        
-    if (user.credits < 1) {
-      throw new Error("Insufficient credits to generate video.");
-    }
+    if (!user) throw new Error("User not found");
+    if (user.credits <= 0) throw new Error("Insufficient credits");
 
-    // Create the video record
     const result = await ctx.db.insert("videoData", {
       title: args.title,
       topic: args.topic,
@@ -39,17 +28,12 @@ export const CreateVideoData = mutation({
       uid: args.uid,
       createdBy: args.createdBy,
       status: "pending",
-      // Initialize optional fields to prevent undefined issues
       audioUrl: "",
       images: "[]",
       captionJson: "{}"
     });
 
-    // Update user credits (subtract 1 from current credits, not from passed credits)
-    await ctx.db.patch(args.uid, {
-      credits: user.credits - 1
-    });
-
+    await ctx.db.patch(args.uid, { credits: user.credits - 1 });
     return result;
   },
 });
@@ -62,22 +46,18 @@ export const UpdateVideoRecord = mutation({
     captionJson: v.string(),
   },
   handler: async (ctx, args) => {
-    // Validate that the video record exists
     const existingVideo = await ctx.db.get(args.videoRecord);
-    if (!existingVideo) {
-      throw new Error("Video record not found");
-    }
+    if (!existingVideo) throw new Error("Video record not found");
 
-    const result = await ctx.db.patch(args.videoRecord, {
+    return await ctx.db.patch(args.videoRecord, {
       audioUrl: args.audioUrl,
       captionJson: args.captionJson,
       images: args.images,
       status: "completed"
     });
-    
-    return result;
   },
 });
+
 
 export const GetUserVideos = query({
   args: {
