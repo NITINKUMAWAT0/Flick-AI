@@ -5,27 +5,27 @@ export const options = [
   {
     name: 'Youtuber',
     value: 'youtuber',
-    style: 'text-yellow-400 text-3xl font-extrabold uppercase tracking-wide drop-shadow-md px-3 py-1 rounded-lg',
+    style: 'text-yellow-400 text-4xl font-extrabold uppercase tracking-wide drop-shadow-md px-3 py-1 rounded-lg',
   },
   {
     name: 'Superme',
     value: 'superme',
-    style: 'text-white text-3xl font-bold italic drop-shadow-lg px-3 py-1 rounded-lg',
+    style: 'text-white text-4xl font-bold italic drop-shadow-lg px-3 py-1 rounded-lg',
   },
   {
     name: 'Neon',
     value: 'neon',
-    style: 'text-green-500 text-3xl font-extrabold uppercase tracking-wide drop-shadow-lg px-3 py-1 rounded-lg',
+    style: 'text-green-500 text-4xl font-extrabold uppercase tracking-wide drop-shadow-lg px-3 py-1 rounded-lg',
   },
   {
     name: 'Glitch',
     value: 'glitch',
-    style: 'text-pink-500 text-3xl font-extrabold uppercase tracking-wide drop-shadow-lg px-3 py-1 rounded-lg',
+    style: 'text-pink-500 text-4xl font-extrabold uppercase tracking-wide drop-shadow-lg px-3 py-1 rounded-lg',
   },
   {
     name: 'Fire',
     value: 'fire',
-    style: 'text-red-500 text-3xl font-extrabold uppercase tracking-wide drop-shadow-[4px_4px_0_rgba(0,0,0,0.2)] px-3 py-1 rounded-lg',
+    style: 'text-red-500 text-4xl font-extrabold uppercase tracking-wide drop-shadow-[4px_4px_0_rgba(0,0,0,0.2)] px-3 py-1 rounded-lg',
   },
 ];
 

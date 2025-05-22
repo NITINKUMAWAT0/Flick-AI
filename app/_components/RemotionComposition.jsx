@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useState } from "react";
 import {
   AbsoluteFill,
@@ -12,14 +13,11 @@ import {
 function RemotionComposition({ videoData, setDurationInFrame }) {
   const { fps } = useVideoConfig();
   const [imageList, setImageList] = useState([]);
-  const [duration, setDuration] = useState(100); // local duration state
+  const [duration, setDuration] = useState(100);
+  const [captions, setCaptions] = useState([]);
   const frame = useCurrentFrame();
 
-  // Debug audio URL to verify it's being passed correctly
-  // useEffect(() => {
-  //   console.log("Audio URL:", videoData?.audioUrl);
-  // }, [videoData]);
-
+  // Parse images
   useEffect(() => {
     if (videoData?.images) {
       try {
@@ -35,26 +33,35 @@ function RemotionComposition({ videoData, setDurationInFrame }) {
     }
   }, [videoData]);
 
+  // Parse captions and calculate duration
   useEffect(() => {
     if (videoData?.captionJson) {
       try {
         const parsed = JSON.parse(videoData.captionJson);
-        const captions = parsed.words || [];
-        if (captions.length > 0) {
-          const totalDuration = Math.ceil(
-            captions[captions.length - 1].end * fps
-          );
+        const words = parsed.words || [];
+        setCaptions(words);
+
+        if (words.length > 0) {
+          const totalDuration = Math.ceil(words[words.length - 1].end * fps);
           setDuration(totalDuration);
-          setDurationInFrame(totalDuration); // inform parent
+          setDurationInFrame(totalDuration);
           return;
         }
       } catch {}
     }
+    setCaptions([]);
     setDuration(100);
     setDurationInFrame(100);
   }, [videoData, fps, setDurationInFrame]);
-//  console.log("Proxied audio URL:", `/api/audio-proxy?url=${encodeURIComponent(videoData.audioUrl)}`);
 
+  // Get current caption text
+  const getCurrentCaptions = () => {
+    const currentTime = frame / fps;
+    const currentWord = captions.find(
+      (item) => currentTime >= item.start && currentTime <= item.end
+    );
+    return currentWord?.punctuated_word || '';
+  };
 
   return (
     <div>
@@ -65,7 +72,7 @@ function RemotionComposition({ videoData, setDurationInFrame }) {
             interpolate(
               frame,
               [startTime, startTime + duration / 2, startTime + duration],
-              index % 2 == 0 ? [1, 1.8, 1] : [1.8, 1, 1.8],
+              index % 2 === 0 ? [1, 1.8, 1] : [1.8, 1, 1.8],
               { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
             );
           return (
@@ -88,15 +95,31 @@ function RemotionComposition({ videoData, setDurationInFrame }) {
             </Sequence>
           );
         })}
-
-  
-<Audio
-  src={`/api/audio-proxy?url=${encodeURIComponent(videoData.audioUrl)}`}
-  volume={1}
-/>
-
-
       </AbsoluteFill>
+
+  <AbsoluteFill
+  style={{
+    justifyContent: "center",
+    alignItems: "center",
+    bottom: 50,
+    height: 150,
+    top:undefined,
+    textAlign: "center",
+    display: "flex", // Needed for centering
+  }}
+>
+  <h2
+    className={`text-7xl ${videoData.caption?.style || "text-white"}`}
+  >
+    {getCurrentCaptions()}
+  </h2>
+</AbsoluteFill>
+
+
+      <Audio
+        src={`/api/audio-proxy?url=${encodeURIComponent(videoData.audioUrl)}`}
+        volume={1}
+      />
     </div>
   );
 }
